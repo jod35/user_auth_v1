@@ -68,13 +68,15 @@ model=api.model('User',
                 {"username":fields.String(),
                  "email":fields.String(),
                  "password":fields.String(),
-                 "data_joined":fields.DateTime(dt_format='rfc822')
+                 "date_joined":fields.DateTime(dt_format='rfc822')
                  })
 
-@api.route('/auth')
+@api.route('/auth/signup')
 class Authentication(Resource):
     #create a new user
+    '''Creates a new user'''
     @api.marshal_with(model,envelope='user')
+    @api.expect(model)
     def post(self):
         data=request.get_json()
 
@@ -88,6 +90,7 @@ class Authentication(Resource):
 
 @api.route('/auth/login')
 class Login(Resource):
+    ''' Logins a user using a token '''
     def post(self):
         data=request.get_json()
 
@@ -98,7 +101,36 @@ class Login(Resource):
 
 
 
+@api.route('/user/<int:id>')
+class UserResource(Resource):
+    @api.doc(params={"id":"ID for a specific user"})
+    @api.marshal_with(model,envelope='user')
+    @api.expect(model)
+    def put(self,id):
+        user=User.get_by_id(id)
 
+        data=request.get_json()
+
+        self.username=data.get('username')
+
+        db.session.commit()
+
+        return user
+
+    @api.doc(params={"id":"ID for a specific user"})
+    @api.marshal_with(model,envelope='user')
+    def delete(self,id):
+        user=User.get_by_id(id)
+        user.delete()
+
+        return user
+
+    @api.doc(params={"id":"ID for a specific user"})
+    @api.marshal_with(model,envelope="user")
+    def get(self,id):
+        user=User.get_by_id(id)
+
+        return user
 
 @app.shell_context_processor
 def make_shell_context():
